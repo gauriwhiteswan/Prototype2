@@ -1,46 +1,56 @@
-name: Deploy to Hugging Face Space
+name: Deploy Prototype2 to Hugging Face Space
 
 on:
   push:
     branches:
       - main
-
-env:
-  HF_SPACE: gauriws/Prototype2
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Prototype2 repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Configure git for push
+      - name: Configure git identity
         run: |
           git config --global user.email "ci@github.com"
           git config --global user.name "GitHub Actions"
 
-      - name: Clone HF space repo
+      - name: Clone HF Prototype2 Space explicitly
         run: |
           rm -rf hf-space
-          git clone https://huggingface.co/spaces/${HF_SPACE} hf-space
+          git clone https://huggingface.co/spaces/gauriws/Prototype2 hf-space
 
-      - name: Clean HF space contents (except .git)
+      - name: Hard reset HF Prototype2 contents (keep .git only)
         run: |
-          find hf-space/* -maxdepth 0 ! -name '.git' -exec rm -rf {} +
+          find hf-space -mindepth 1 -maxdepth 1 ! -name ".git" -exec rm -rf {} +
 
-      - name: Copy files to HF space
+      - name: Copy Prototype2 files into HF Space
         run: |
-          rsync -av --exclude '.git' --exclude 'hf-space' ./ hf-space/
+          rsync -av \
+            --exclude ".git" \
+            --exclude "hf-space" \
+            ./ hf-space/
 
-      - name: Set correct remote and push
+      - name: Commit & push ONLY to HF Prototype2
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           cd hf-space
-          git remote remove origin
-          git remote add hf https://gauriws:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/${HF_SPACE}
+
+          # REMOVE ANY EXISTING REMOTES
+          git remote remove origin || true
+
+          # ADD HF REMOTE EXPLICITLY
+          git remote add hf https://gauriws:${HF_TOKEN}@huggingface.co/spaces/gauriws/Prototype2
+
           git add .
-          git commit -m "Deploy from Prototype2" || echo "No changes"
+          git commit -m "Deploy from Prototype2" || echo "No changes to commit"
+
+          # PUSH ONLY TO THIS EXACT SPACE
           git push hf main --force
