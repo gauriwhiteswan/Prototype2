@@ -1,13 +1,13 @@
 ---
-title: Prototype1
-emoji: 🧠
+title: Prototype2
+emoji: 🔥
 colorFrom: gray
 colorTo: green
 sdk: docker
 pinned: false
 ---
 
-# Prototype1
+# Prototype2
 
 MCP-based security prototype with PEP/PDP enforcement.
 
