@@ -31,4 +31,3 @@ This project demonstrates a **secure, policy-governed integration** between AI a
 - Multiple agents
 - Multiple MCP servers
 - Centralized policy management
-- no new runs
