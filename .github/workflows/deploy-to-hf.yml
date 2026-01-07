@@ -11,36 +11,36 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Configure git
+      - name: Configure git for push
         run: |
           git config --global user.email "ci@github.com"
           git config --global user.name "GitHub Actions"
 
-      - name: Clone HF Space
+      - name: Clone HF space repo
         run: |
           rm -rf hf-space
-          git clone https://gauriws:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/${HF_SPACE} hf-space
+          git clone https://huggingface.co/spaces/${HF_SPACE} hf-space
 
-      - name: Prepare HF Space for deploy
+      - name: Clean HF space contents (except .git)
+        run: |
+          find hf-space/* -maxdepth 0 ! -name '.git' -exec rm -rf {} +
+
+      - name: Copy files to HF space
+        run: |
+          rsync -av --exclude '.git' --exclude 'hf-space' ./ hf-space/
+
+      - name: Set correct remote and push
         run: |
           cd hf-space
-          find . -mindepth 1 ! -regex '^./.git\(/.*\)?' -delete
-          cd ..
-
-      - name: Copy files to HF Space
-        run: |
-          cp -r . hf-space
-
-      - name: Commit and push to HF
-        run: |
-          cd hf-space
+          git remote remove origin
+          git remote add hf https://gauriws:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/${HF_SPACE}
           git add .
           git commit -m "Deploy from Prototype2" || echo "No changes"
-          git push https://gauriws:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/${HF_SPACE}
+          git push hf main --force
